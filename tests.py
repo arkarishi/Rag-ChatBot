@@ -11,7 +11,7 @@ embeddings = agent.document_embeddings("1706.03762v7.pdf")
 
 summary = agent.summarise("1706.03762v7.pdf")
 
-query = 'What is the main idea of the paper?'
+query = 'Explain how transformers are used in language detection'
 
 query_embeddings = agent.query_embeddings(query)
 

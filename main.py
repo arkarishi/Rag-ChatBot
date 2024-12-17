@@ -9,9 +9,8 @@ class Agent:
     def __init__(self, api_key):
         self.client = cohere.ClientV2(api_key)
         self.embedding_model = "embed-english-v3.0"
-        self.summarisation_model = "command-r-plus-08-2024"
+        self.text_model = "command-r-plus-08-2024"
         self.rerank_model = "rerank-english-v2.0"
-        self.generating_model = "command-r"
         self.input_document = "search_document"
         self.input_query = "search_query"
         self.splits = None
@@ -60,7 +59,7 @@ class Agent:
         Generate a concise summary for the text: {self.load_paper(file_path)}
         """
         response = self.client.chat(
-            model = self.summarisation_model,
+            model = self.tex_model,
             messages=[{"role": "user", "content": message}]
         )
         return response.message.content[0].text
@@ -81,7 +80,6 @@ class Agent:
         top_indices = sorted_indices[:10]
         top_chunks_after_retrieval = [self.splits[i].page_content for i in top_indices]
 
-
         # TODO : Implement Reranking
         # rerank_response = self.client.rerank(
         #     query = query, 
@@ -89,7 +87,8 @@ class Agent:
         #     top_n=3,
         #     model = self.rerank_model
         # )
-        
+
+        # top_chunks_after_rerank = [result.document['index'] for result in rerank_response.results]
 
         preamble = """
         ## Task &amp; Context
@@ -105,18 +104,18 @@ class Agent:
         documents = [
             {"title": i, 
              "snippet": top_chunks_after_retrieval[i], 
-             "data": {"text": top_chunks_after_retrieval[i]}} for i in range(min(len(top_chunks_after_retrieval), 5))
+             "data": {"text": top_chunks_after_retrieval[i]}} for i in range(min(len(top_chunks_after_retrieval), 10))
         ]
 
         response = self.client.chat(
             messages = [{"role": "user", "content": f"{preamble} {query}"}],
             documents = documents,
-            # preamble = preamble,
-            model = self.summarisation_model,
+            model = self.text_model,
             temperature=0.3
         )
 
         return response.message.content[0].text
+
 
     
     
