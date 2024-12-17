@@ -11,4 +11,10 @@ embeddings = agent.document_embeddings("1706.03762v7.pdf")
 
 summary = agent.summarise("1706.03762v7.pdf")
 
-print(summary)
+query = 'What is the main idea of the paper?'
+
+query_embeddings = agent.query_embeddings(query)
+
+similarities = agent.rag("1706.03762v7.pdf", query)
+
+print(similarities)
