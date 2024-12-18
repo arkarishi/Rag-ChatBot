@@ -1,8 +1,8 @@
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from typing import Union, List
 import numpy as np
+from typing import Union, List
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 import cohere
 
 class Agent:
@@ -10,7 +10,8 @@ class Agent:
         self.client = cohere.ClientV2(api_key)
         self.embedding_model = "embed-english-v3.0"
         self.text_model = "command-r-plus-08-2024"
-        self.rerank_model = "rerank-english-v2.0"
+        self.rerank_model = "rerank-v3.5"
+        self.generating_model = "command-r"
         self.input_document = "search_document"
         self.input_query = "search_query"
         self.splits = None
@@ -51,7 +52,7 @@ class Agent:
         ).embeddings.float[0]
         return self.query_embeds
     
-    def summarise(self, file_path) -> str:
+    def summarise(self, file_path):
         """
         implement logic for summarisation 
         """
@@ -59,7 +60,7 @@ class Agent:
         Generate a concise summary for the text: {self.load_paper(file_path)}
         """
         response = self.client.chat(
-            model = self.tex_model,
+            model = self.text_model,
             messages=[{"role": "user", "content": message}]
         )
         return response.message.content[0].text
@@ -80,16 +81,18 @@ class Agent:
         top_indices = sorted_indices[:10]
         top_chunks_after_retrieval = [self.splits[i].page_content for i in top_indices]
 
+
         # TODO : Implement Reranking
-        # rerank_response = self.client.rerank(
-        #     query = query, 
-        #     documents=top_chunks_after_retrieval,
-        #     top_n=3,
-        #     model = self.rerank_model
-        # )
+        rerank_response = self.client.rerank(
+            query = query, 
+            documents=top_chunks_after_retrieval,
+            top_n=3,
+            model = self.rerank_model
+        )
 
-        # top_chunks_after_rerank = [result.document['index'] for result in rerank_response.results]
-
+        indices = [result.index for result in rerank_response.results]
+        top_chunks_after_rerank = [top_chunks_after_retrieval[i] for i in indices]
+        
         preamble = """
         ## Task &amp; Context
         You help people answer their questions and other requests interactively. 
@@ -103,8 +106,8 @@ class Agent:
 
         documents = [
             {"title": i, 
-             "snippet": top_chunks_after_retrieval[i], 
-             "data": {"text": top_chunks_after_retrieval[i]}} for i in range(min(len(top_chunks_after_retrieval), 10))
+             "snippet": top_chunks_after_rerank[i], 
+             "data": {"text": top_chunks_after_rerank[i]}} for i in range(min(len(top_chunks_after_rerank), 5))
         ]
 
         response = self.client.chat(
@@ -114,7 +117,9 @@ class Agent:
             temperature=0.3
         )
 
-        return response.message.content[0].text
+        return response.message.content[0].text  
+
+        # return top_chunks_after_rerank
 
 
     
