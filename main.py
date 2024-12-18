@@ -1,5 +1,4 @@
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.vectorstores import Chroma
 import numpy as np
 from typing import Union, List
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,6 +13,7 @@ class Agent:
         self.generating_model = "command-r"
         self.input_document = "search_document"
         self.input_query = "search_query"
+        self.indices = 10
         self.splits = None
         self.vectordb = None
 
@@ -23,7 +23,8 @@ class Agent:
         ).load()
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size = 1000,
-            chunk_overlap = 200
+            chunk_overlap = 200,
+            length_function = len
         )
         self.splits = text_splitter.split_documents(document)
         if embed == True:
@@ -70,7 +71,7 @@ class Agent:
         implement logic for question-answering
         """
         def cosine_similarity(a, b):
-            return np.dot(a, b) / np.linalg.norm(a) * np.linalg.norm(b)
+            return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
         
 
         document_embeds = self.document_embeddings(file_path)
@@ -78,7 +79,7 @@ class Agent:
 
         similarities = [cosine_similarity(query_embeds, embedding) for embedding in document_embeds]
         sorted_indices = np.argsort(similarities)[::-1]
-        top_indices = sorted_indices[:10]
+        top_indices = sorted_indices[:self.indices]
         top_chunks_after_retrieval = [self.splits[i].page_content for i in top_indices]
 
 
@@ -86,7 +87,7 @@ class Agent:
         rerank_response = self.client.rerank(
             query = query, 
             documents=top_chunks_after_retrieval,
-            top_n=3,
+            top_n=self.indices,
             model = self.rerank_model
         )
 
@@ -107,7 +108,7 @@ class Agent:
         documents = [
             {"title": i, 
              "snippet": top_chunks_after_rerank[i], 
-             "data": {"text": top_chunks_after_rerank[i]}} for i in range(min(len(top_chunks_after_rerank), 5))
+             "data": {"text": top_chunks_after_rerank[i]}} for i in range(min(len(top_chunks_after_rerank), self.indices))
         ]
 
         response = self.client.chat(
@@ -118,8 +119,6 @@ class Agent:
         )
 
         return response.message.content[0].text  
-
-        # return top_chunks_after_rerank
 
 
     
