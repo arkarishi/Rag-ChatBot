@@ -1,7 +1,8 @@
 from langchain_community.document_loaders import PyPDFLoader
+from collections import defaultdict
 import numpy as np
 from typing import Union, List
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter
 import cohere
 
 class Agent:
@@ -21,7 +22,7 @@ class Agent:
         document =  PyPDFLoader(
             file_path = file_path
         ).load()
-        text_splitter = RecursiveCharacterTextSplitter(
+        text_splitter = CharacterTextSplitter(
             chunk_size = 1000,
             chunk_overlap = 200,
             length_function = len
@@ -39,9 +40,9 @@ class Agent:
             input_type= self.input_document,
             embedding_types=["float"]
         ).embeddings.float
-        self.vectordb = {
+        self.vectordb = defaultdict(np.array, {
             i:np.array(embedding) for i, embedding in enumerate(self.doc_embeds)
-        }
+        })
         return self.doc_embeds
     
     def query_embeddings(self, query) -> list:
@@ -53,10 +54,7 @@ class Agent:
         ).embeddings.float[0]
         return self.query_embeds
     
-    def summarise(self, file_path):
-        """
-        implement logic for summarisation 
-        """
+    def summarise(self, file_path) -> str:
         message = f"""
         Generate a concise summary for the text: {self.load_paper(file_path)}
         """
@@ -67,27 +65,21 @@ class Agent:
         return response.message.content[0].text
 
     def rag(self, file_path, query) -> str:
-        """
-        implement logic for question-answering
-        """
         def cosine_similarity(a, b):
             return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
         
-
         document_embeds = self.document_embeddings(file_path)
         query_embeds = self.query_embeddings(query)
 
         similarities = [cosine_similarity(query_embeds, embedding) for embedding in document_embeds]
         sorted_indices = np.argsort(similarities)[::-1]
         top_indices = sorted_indices[:self.indices]
-        top_chunks_after_retrieval = [self.splits[i].page_content for i in top_indices]
+        top_chunks_after_retrieval = [self.splits[int(i)].page_content for i in top_indices]
 
-
-        # TODO : Implement Reranking
         rerank_response = self.client.rerank(
             query = query, 
             documents=top_chunks_after_retrieval,
-            top_n=self.indices,
+            top_n=3,
             model = self.rerank_model
         )
 
@@ -114,10 +106,9 @@ class Agent:
         response = self.client.chat(
             messages = [{"role": "user", "content": f"{preamble} {query}"}],
             documents = documents,
-            model = self.text_model,
+            model = self.generating_model,
             temperature=0.3
         )
-
         return response.message.content[0].text  
 
 
