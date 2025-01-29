@@ -28,7 +28,7 @@ class Agent:
             length_function = len
         )
         self.splits = text_splitter.split_documents(document)
-        if embed == True:
+        if embed:
             return [split.page_content for split in self.splits]
         else: 
             return " ".join([split.page_content for split in self.splits])
