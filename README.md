@@ -1,4 +1,4 @@
-# README: Basic RAG Agent
+# Basic RAG Agent
 
 ## Overview
 
