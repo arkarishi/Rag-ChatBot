@@ -2,7 +2,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from collections import defaultdict
 import numpy as np
 from typing import Union, List
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 import cohere
 
 class Agent:
@@ -22,9 +22,9 @@ class Agent:
         document =  PyPDFLoader(
             file_path = file_path
         ).load()
-        text_splitter = CharacterTextSplitter(
-            chunk_size = 1000,
-            chunk_overlap = 200,
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size = 1200,
+            chunk_overlap = 180,
             length_function = len
         )
         self.splits = text_splitter.split_documents(document)
@@ -54,15 +54,16 @@ class Agent:
         ).embeddings.float[0]
         return self.query_embeds
     
-    def summarise(self, file_path) -> str:
-        message = f"""
-        Generate a concise summary for the text: {self.load_paper(file_path)}
-        """
-        response = self.client.chat(
-            model = self.text_model,
-            messages=[{"role": "user", "content": message}]
-        )
-        return response.message.content[0].text
+    # def summarise(self, file_path) -> str:
+    #     message = f"""
+    #     Generate a concise summary for the text: {self.load_paper(file_path)}
+    #     """
+    #     response = self.client.chat(
+    #         model = self.text_model,
+    #         messages=[{"role": "user", "content": message}]
+    #     )
+    #     return response.message.content[0].text
+
 
     def rag(self, file_path, query) -> str:
         def cosine_similarity(a, b):
@@ -89,7 +90,7 @@ class Agent:
         preamble = """
         ## Task &amp; Context
         You help people answer their questions and other requests interactively. 
-        You will be asked questions related to a particular modern research topic. 
+        You will be asked questions related to a particular modern topic. 
         You will be equipped with a wide range of search engines or similar tools to help you, which you use to research your answer. 
         You should focus on serving the user's needs as best you can, which will be wide-ranging.
 
@@ -106,8 +107,8 @@ class Agent:
         response = self.client.chat(
             messages = [{"role": "user", "content": f"{preamble} {query}"}],
             documents = documents,
-            model = self.generating_model,
-            temperature=0.3
+            model = self.text_model,
+            temperature=0.5,
         )
         return response.message.content[0].text  
 
