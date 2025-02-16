@@ -10,13 +10,12 @@ This project provides a command-line interface (CLI) tool to analyze and extract
 - **Generate document embeddings**: Utilizes Cohere’s `embed-english-v3.0` model to generate vector representations.
 - **Query-based document retrieval**: Implements **cosine similarity** and Cohere’s `rerank-v3.5` model to refine search results.
 - **Summarization**: Generates concise summaries of the document using Cohere’s `command-r-plus-08-2024` model.
-- **CLI interface**: Simple command-line tool for interacting with documents.
 
 ## File Structure
 
 ```
 ├── main.py  # Core logic for document processing and AI-powered query handling
-├── tui.py   # Command-line interface for user interaction
+├── ui.py   # Streamlit based interface for user interaction
 ├── .env     # Stores API keys (not included in the repository)
 ```
 
@@ -25,7 +24,7 @@ This project provides a command-line interface (CLI) tool to analyze and extract
 Ensure you have the following Python packages installed:
 
 ```bash
-pip install langchain_community numpy cohere rich python-dotenv argparse
+pip install langchain_community numpy cohere rich python-dotenv argparse streamlit
 ```
 
 ## Setup
@@ -40,17 +39,12 @@ pip install langchain_community numpy cohere rich python-dotenv argparse
    COHERE_API_KEY=your_api_key_here
    ```
 
-3. **Run the CLI Tool**  
-   To summarize a document:
-
-   ```bash
-   python tui.py --file path/to/document.pdf --summarise
-   ```
+3. **Run the UI**  
 
    To ask a question about a document:
 
    ```bash
-   python tui.py --file path/to/document.pdf --query "What is the main conclusion?"
+   streamlit run ui.py"
    ```
 
 ## How It Works
@@ -63,27 +57,11 @@ pip install langchain_community numpy cohere rich python-dotenv argparse
    - Generates a final response using **Cohere’s chat model**.
 4. **Summarization**: Uses Cohere’s chat model to produce a concise summary.
 
-## Example Usage
-
-```bash
-python tui.py --file research_paper.pdf --summarise
-```
-_Output_:  
-*"This research paper discusses..."*
-
-```bash
-python tui.py --file research_paper.pdf --query "What methods were used?"
-```
-_Output_:  
-*"The authors employed..."*
-
 ## Future Enhancements
 
 - **Support for additional file formats** (e.g., DOCX, TXT)
 - **Integration with other AI models** (e.g., OpenAI, Hugging Face)
-- **Web interface** for better user experience
+- **Add tests** 
 
-## License
 
-This project is open-source and available for further development.
 
