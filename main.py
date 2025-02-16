@@ -2,7 +2,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from collections import defaultdict
 import numpy as np
 from typing import Union, List
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter
 import cohere
 
 class Agent:
@@ -22,9 +22,9 @@ class Agent:
         document =  PyPDFLoader(
             file_path = file_path
         ).load()
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size = 1200,
-            chunk_overlap = 180,
+        text_splitter = CharacterTextSplitter(
+            chunk_size = 1000,
+            chunk_overlap = 200,
             length_function = len
         )
         self.splits = text_splitter.split_documents(document)
@@ -63,7 +63,6 @@ class Agent:
     #         messages=[{"role": "user", "content": message}]
     #     )
     #     return response.message.content[0].text
-
 
     def rag(self, file_path, query) -> str:
         def cosine_similarity(a, b):
@@ -107,7 +106,7 @@ class Agent:
         response = self.client.chat(
             messages = [{"role": "user", "content": f"{preamble} {query}"}],
             documents = documents,
-            model = self.text_model,
+            model = self.generating_model,
             temperature=0.5,
         )
         return response.message.content[0].text  
