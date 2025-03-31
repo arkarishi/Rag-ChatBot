@@ -1,0 +1,8 @@
+streamlit
+cohere
+numpy
+langchain
+langchain-community
+rich
+python-dotenv
+pypdf
