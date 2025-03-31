@@ -1,9 +1,11 @@
-from langchain_community.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader
 from collections import defaultdict
 import numpy as np
 from typing import Union, List
 from langchain.text_splitter import CharacterTextSplitter
 import cohere
+from dotenv import load_dotenv
+load_dotenv()
 
 class Agent:
     def __init__(self, api_key):

@@ -3,6 +3,8 @@ import tempfile
 from main import Agent
 import os
 import time
+from dotenv import load_dotenv
+load_dotenv()
 
 st.set_page_config(page_title="Research Chatbot", layout="wide")
 
